@@ -105,7 +105,7 @@ export declare type NavMeshProfile = {
     navMesh: INavMesh;
 };
 /**
- * Detailed information about a waypoint returned by the {@link navmesh.getPathAlongSurface}
+ * Detailed information about a waypoint returned by the {@link NavMesh.getPathAlongSurface}
  * method. Contains both position and normal data.
  */
 export declare type NavMeshWaypoint = {
@@ -113,8 +113,8 @@ export declare type NavMeshWaypoint = {
     normal: Vec3;
 };
 /**
- * Defines the pathfinding calculation results for the {@link navmesh.getPathAlongSurface}
- * property. This contains slightly more information than the {@link Navmesh.getPath} property.
+ * Defines the pathfinding calculation results for the {@link NavMesh.getPathAlongSurface}
+ * property. This contains slightly more information than the {@link NavMesh.getPath} property.
  *
  * @remarks
  * Variables:
@@ -218,7 +218,7 @@ export interface INavMesh {
      * returned with waypoints from the start position to the closest possible
      * point to the destination.
      *
-     * We recommend using the {@link getNearestPoint} method to filter the parameters
+     * We recommend using the {@link INavMesh.getNearestPoint | getNearestPoint} method to filter the parameters
      * for this method, so the start and target paths are always valid.
      *
      * @param start - The starting position of the desired path.
@@ -233,12 +233,12 @@ export interface INavMesh {
      * target destination, returning significant waypoints which are aligned with
      * the underlying geometry surface.
      *
-     * @remarks Output is similar to {@link getPath}, but returns more detailed
+     * @remarks Output is similar to {@link INavMesh.getPath | getPath}, but returns more detailed
      * waypoint information. This is slightly more computationally expensive than
-     * {@link getPath}.
+     * {@link INavMesh.getPath | getPath}.
      *
-     * We recommend using {@link getPath} instead when the returned waypoint output is
-     * used in conjunction with other NavMesh APIs such as {@link raycast}.
+     * We recommend using {@link INavMesh.getPath | getPath} instead when the returned waypoint output is
+     * used in conjunction with other NavMesh APIs such as {@link INavMesh.raycast | raycast}.
      */
     getPathAlongSurface(start: Vec3, destination: Vec3): null | NavMeshDetailedPath;
     /**
@@ -386,7 +386,7 @@ export declare class NavMesh implements INavMesh {
      * returned with waypoints from the start position to the closest possible
      * point to the destination.
      *
-     * We recommend using the {@link getNearestPoint} method to filter the parameters
+     * We recommend using the {@link NavMesh.getNearestPoint | getNearestPoint} method to filter the parameters
      * for this method, so the start and target paths are always valid.
      *
      * @param start - The starting position of the desired path.
@@ -401,12 +401,12 @@ export declare class NavMesh implements INavMesh {
      * target destination, returning significant waypoints which are aligned with
      * the underlying geometry surface.
      *
-     * @remarks Output is similar to {@link getPath}, but returns more detailed
+     * @remarks Output is similar to {@link NavMesh.getPath | getPath}, but returns more detailed
      * waypoint information. This is slightly more computationally expensive than
-     * {@link getPath}.
+     * {@link NavMesh.getPath | getPath}.
      *
-     * We recommend using {@link getPath} instead when the returned waypoint output is
-     * used in conjunction with other NavMesh APIs such as {@link raycast}.
+     * We recommend using {@link NavMesh.getPath | getPath} instead when the returned waypoint output is
+     * used in conjunction with other NavMesh APIs such as {@link NavMesh.raycast | raycast}.
      *
      * @param start - The starting position of the desired path.
      * @param end - The target destination of the desired path.
@@ -478,7 +478,7 @@ export declare class NavMesh implements INavMesh {
 /**
  * The possible orientation values for {@link NavMeshAgent} locomotion.
  *
- * @remarks See the {@link NavMeshAgent.alignmentMode} property for usage.
+ * @remarks See the {@link NavMeshAgent.alignmentMode | alignmentMode} property for usage.
  */
 export declare const enum NavMeshAgentAlignment {
     /**
@@ -534,7 +534,7 @@ export interface INavMeshAgent {
      * The max travel speed for the agent.
      *
      * @remarks
-     * To change how fast the agent reaches its max speed, use the {@link acceleration} property.
+     * To change how fast the agent reaches its max speed, use the {@link INavMeshAgent.acceleration | acceleration} property.
      *
      * Default: 5 meters per second
      */
@@ -552,7 +552,7 @@ export interface INavMeshAgent {
      * The rate in degrees pers second, at which the agent rotates towards its desired orientation.
      *
      * @remarks
-     * The agent's desired orientation is determined by its {@link alignmentMode} property.
+     * The agent's desired orientation is determined by its {@link INavMeshAgent.alignmentMode | alignmentMode} property.
      *
      * Default: 120 degrees per second
      */
@@ -571,7 +571,7 @@ export interface INavMeshAgent {
      * In Play Mode, agents move towards their destination until reached. When the position is outside
      * the navigable surface, the agent will not be able to find path to the destination.
      * If it is the intention to move towards a position outside the navigable surface, use the
-     * {@link getNearestPoint} method to get a valid target location.
+     * {@link INavMesh.getNearestPoint} method to get a valid target location.
      */
     destination: HorizonProperty<Vec3 | null>;
     /**
@@ -610,7 +610,7 @@ export interface INavMeshAgent {
      * agent should take into consideration during collision avoidance calculations.
      *
      * This property only sets the agent's avoidance layer. If you want to set the mask,
-     * see {@link avoidanceMask}.
+     * see {@link INavMeshAgent.avoidanceMask | avoidanceMask}.
      *
      * @example
      * ```
@@ -635,7 +635,7 @@ export interface INavMeshAgent {
      * In tandem with the layer is the avoidance mask, a bitmask representing the layers which this
      * agent should take into consideration during collision avoidance calculations.
      *
-     * This method only sets the agent's avoidance mask. If you want to set the layer, see {@link avoidanceLayer}.
+     * This method only sets the agent's avoidance mask. If you want to set the layer, see {@link INavMeshAgent.avoidanceLayer | avoidanceLayer}.
      *
      * @example
      * ```
@@ -705,7 +705,7 @@ export interface INavMeshAgent {
      * you can use this property. Other agents will try to navigate around it. However, if the world geometry doesn't allow for it,
      * it's possible other agents will collide with this agent or get stuck trying to move past it.
      *
-     * The agent will not move at all unless `isImmobile` is set to `false`, even if the {@link destination} property is set.
+     * The agent will not move at all unless `isImmobile` is set to `false`, even if the {@link INavMeshAgent.destination | destination} property is set.
      *
      * Default: false
      */
@@ -831,7 +831,7 @@ export declare class NavMeshAgent extends Entity implements INavMeshAgent {
      * The max travel speed for the agent.
      *
      * @remarks
-     * To change how fast the agent reaches its max speed, use the {@link acceleration} property.
+     * To change how fast the agent reaches its max speed, use the {@link NavMeshAgent.acceleration | acceleration} property.
      *
      * Default: 5 meters per second
      */
@@ -849,7 +849,7 @@ export declare class NavMeshAgent extends Entity implements INavMeshAgent {
      * The rate in degrees pers second, at which the agent rotates towards its desired orientation.
      *
      * @remarks
-     * The agent's desired orientation is determined by its {@link alignmentMode} property.
+     * The agent's desired orientation is determined by its {@link NavMeshAgent.alignmentMode | alignmentMode} property.
      *
      * Default: 120 degrees per second
      */
@@ -868,7 +868,7 @@ export declare class NavMeshAgent extends Entity implements INavMeshAgent {
      * In Play Mode, agents move towards their destination until reached. When the position is outside
      * the navigable surface, the agent will not be able to find path to the destination.
      * If it is the intention to move towards a position outside the navigable surface, use the
-     * {@link getNearestPoint} method to get a valid target location.
+     * {@link NavMesh.getNearestPoint} method to get a valid target location.
      */
     destination: HorizonProperty<Vec3 | null>;
     /**
@@ -907,7 +907,7 @@ export declare class NavMeshAgent extends Entity implements INavMeshAgent {
      * agent should take into consideration during collision avoidance calculations.
      *
      * This property only sets the agent's avoidance layer. If you want to set the mask,
-     * see {@link avoidanceMask}.
+     * see {@link NavMeshAgent.avoidanceMask | avoidanceMask}.
      */
     avoidanceLayer: HorizonProperty<number>;
     /**
@@ -920,7 +920,7 @@ export declare class NavMeshAgent extends Entity implements INavMeshAgent {
      * In tandem with the layer is the avoidance mask, a bitmask representing the layers which this
      * agent should take into consideration during collision avoidance calculations.
      *
-     * This method only sets the agent's avoidance mask. If you want to set the layer, see {@link avoidanceLayer}.
+     * This method only sets the agent's avoidance mask. If you want to set the layer, see {@link NavMeshAgent.avoidanceLayer | avoidanceLayer}.
      */
     avoidanceMask: HorizonProperty<number>;
     /**
@@ -964,7 +964,7 @@ export declare class NavMeshAgent extends Entity implements INavMeshAgent {
      * you can use this property. Other agents will try to navigate around it. However, if the world geometry doesn't allow for it,
      * it's possible other agents will collide with this agent or get stuck trying to move past it.
      *
-     * The agent will not move at all unless `isImmobile` is set to `false`, even if the {@link destination} property is set.
+     * The agent will not move at all unless `isImmobile` is set to `false`, even if the {@link NavMeshAgent.destination | destination} property is set.
      *
      * Default: false
      */

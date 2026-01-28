@@ -43,16 +43,20 @@ class FallingPlatform extends Component<typeof FallingPlatform> {
       
       platform.position.set(Vec3.lerp(startPosition, endPosition, t));
 
+
       if (t >= 1.0) {
         fallUpdate.disconnect();
         this.scheduleDisappear(platform);
       }
     });
+ 
+
   }
 
   private scheduleDisappear(platform: Entity) {
     this.async.setTimeout(() => {
       platform.visible.set(false);
+      platform.collidable.set(false);
     }, this.disappearDelay * 1000);
   }
 }
