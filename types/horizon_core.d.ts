@@ -1737,6 +1737,76 @@ export declare class Entity {
      */
     getPhysicsBounds(): Bounds;
     /**
+     * Sets a transform constraint of an entity (the child) to another (the parent).
+     *
+     * @remarks
+     * This is the "snapping version" of transform constraint, using the `localPosition`, `localRotation`, and `localScale` parameters.
+     * It overrides the child's original local world position, rotation, and scale in its parent's coordinate system.
+     *
+     * @param parentEntity - The parent entity.
+     * @param localPosition - The child's local position in its parent's coordinate system.
+     * @param localRotation - The child's local rotation in its parent's coordinate system.
+     * @param localScale - The child's local scale in its parent's coordinate system.
+     */
+    setTransformConstraint(parentEntity: Entity, localPosition: Vec3, localRotation: Quaternion, localScale: Vec3): void;
+    /**
+     * Sets a transform constraint of an entity (the child) to another (the parent).
+     *
+     * @remarks
+     * This is the "keep relative version" of transform constraint, using the child's original local world position, rotation, and scale.
+     * Its parent's coordinate system is preserved after the operation.
+     *
+     * To keep the child entity's world position, location, and scale before and after the attachment operation,
+     * use this method instead of "setTransformConstraint". To override attached entity's
+     * world position and location with your custom values, use "setTransformConstraint" with custom values.
+     * @param parentEntity - The parent entity.
+     */
+    setTransformConstraintKeepRelative(parentEntity: Entity): void;
+    /**
+     * Clears the transform constraint of an entity.
+     */
+    clearTransformConstraint(): void;
+    /**
+     * Sets a transform constraint of an entity (the child) to another asset bundle gizmo reference.
+     *
+     * @remarks
+     * An asset bundle gizmo reference normally refers to one of the bone references generated in the game dynamically by the asset bundle gizmo.
+     * This is the "snapping version" of transform constraint, using the `localPosition`, `localRotation` and `localScale` parameters.
+     * This function overrides the child's original local world position, rotation, and scale in its parent's coordinate system.
+     *
+     * IMPORTANT: For now, if you call this function in the start() function of your TS script, you need
+     * to assure the attached object share the same ownership with the being attached asset bundle.
+     * This is because the asset bundle is playing the animation on the client side, but the SOP is synced by
+     * the server. So if they do not share the same ownership, you may notice some de-sync issue.
+     *
+     * You must import the asset bundle using the `Always Animate` option for `Culling Mode`.
+     * Otherwise, the asset does not animate with the entity.
+     *
+     * @param parentEntity - The parent entity (an asset bundle gizmo entity).
+     * @param referenceName - The asset bundle gizmo reference name.
+     * @param localPosition - The child's local position in its parent's coordinate system.
+     * @param localRotation - The child's local rotation in its parent's coordinate system.
+     * @param localScale - The child's local scale in its parent's coordinate system.
+     */
+    setTransformConstraintToAssetBundleGizmoReference(parentEntity: Entity, referenceName: string, localPosition: Vec3, localRotation: Quaternion, localScale: Vec3): void;
+    /**
+     * Sets a transform constraint of an entity (the child) to another asset bundle gizmo reference.
+     *
+     * @remarks
+     * An asset bundle gizmo reference normally refers to one of the bone references generated in the game dynamically by the asset bundle gizmo.
+     * This is the "keep relative version" of transform constraint, using the child's original local world position, rotation, and scale.
+     * This function preserves its parent's coordinate system after the operation.
+     *
+     * Important: For now, if you call this function in the start() function of your TS script, you need
+     * to assure the attached object share the same ownership with the being attached asset bundle.
+     * This is because the asset bundle is playing the animation on the client side, but the SOP is synced by
+     * the server. So if they do not share the same ownership, you may notice some de-sync issue.
+     *
+     * @param parentEntity - The parent entity (asset bundle gizmo entity).
+     * @param referenceName - The asset bundle gizmo reference name.
+     */
+    setTransformConstraintToAssetBundleGizmoReferenceKeepRelative(parentEntity: Entity, referenceName: string): void;
+    /**
      * Whether or not the entity is still a valid entity reference, and hasn't been disposed.
      * Useful in asynchronous contexts (async/awaits, promise.then's, and networkEvents).
      *
@@ -2895,6 +2965,26 @@ export declare enum EntityInteractionMode {
     Invalid = "Invalid"
 }
 /**
+ * A tag associated with a player avatar.
+ */
+export declare class NameTag {
+    /**
+     * The player attached to the tag.
+     */
+    private readonly player;
+    /**
+     * Creates a new `NameTag`.
+     * @param player - The Player to attach the tag to.
+     */
+    constructor(player: Player);
+    /**
+     * The visibility of the player's tag.
+     *
+     * @remarks `true` for visible, `false` for invisible.
+     */
+    visible: HorizonProperty<boolean>;
+}
+/**
  * Represents a player body part.
  */
 export declare class PlayerBodyPart {
@@ -3487,6 +3577,10 @@ export declare class Player {
      * The player's right hand.
      */
     rightHand: PlayerHand;
+    /**
+     * The name tag for the player.
+     */
+    readonly nameTag: NameTag;
     /**
      * The player's position relative to the world origin.
      */
@@ -4149,6 +4243,76 @@ export declare class Player {
      * @param duration - duration in milliseconds for how long the message should be shown
      */
     showToastMessage(message: i18n_utils.LocalizableText | string, duration?: number): void;
+    /**
+     * Sets Mobile Input control types to the default style
+     * This uses a linear gradient for speed relative to the joystick magnitude
+     * Has no effect if set for a Player on VR or Web
+     * Must be run on a local player
+     *
+     * @example
+     * ```
+     * start() {
+     *   const owner = this.owner.get();
+     * 	 if (owner.id != this.world.serverPlayer.get().id) {
+     *     var player = new hz.Player(this.entity.owner.get().id);
+     *     player?.setMobileInputStyleDefault();
+     *   }
+     * }
+     * ```
+     */
+    setMobileInputStyleDefault(): void;
+    /**
+     * Sets Mobile Input control types to a stepped curve
+     * This provides a more responsive feel to mobile players
+     * by using 1 of 3 specific movement magnitudes (walk/run/sprint)
+     *
+     * This allows players to have more fine control on tricky obstacles or small areas
+     * they might want to explore e.g. a lobby, or for navigation tightropes in a
+     * platforming game.
+     *
+     * Has no effect if set for a Player on VR or Web
+     * Must be run on a local player
+     *
+     * @param walkThreshold - default 0.05
+     * @param runThreshold - default 0.4
+     * @param sprintThreshold - default 0.95
+     *
+     * @example
+     * ```
+     * start() {
+     *   const owner = this.owner.get();
+     * 	 if (owner.id != this.world.serverPlayer.get().id) {
+     *     var player = new hz.Player(this.entity.owner.get().id);
+     *     player?.setMobileInputStyleComfortable();
+     *   }
+     * }
+     * ```
+     */
+    setMobileInputStyleComfortable(walkThreshold?: number, runThreshold?: number, sprintThreshold?: number): void;
+    /**
+     * Sets Mobile Input control types to make the player sprint with
+     * minimal input on the joystick
+     *
+     * The Threshold for sprinting is set at an input magnitude of 0.05
+     *
+     * This will provide a more responsive feel for fast-paced
+     * action oriented worlds
+     *
+     * Has no effect if set for a Player on VR or Web player
+     * Must be run on a local player
+     *
+     * @example
+     * ```
+     * start() {
+     *   const owner = this.owner.get();
+     * 	 if (owner.id != this.world.serverPlayer.get().id) {
+     *     var player = new hz.Player(this.entity.owner.get().id);
+     *     player?.setMobileInputStyleAlwaysSprint();
+     *   }
+     * }
+     * ```
+     */
+    setMobileInputStyleAlwaysSprint(): void;
 }
 /**
  * The options for the {@link Player.enterFocusedInteractionMode} method.
