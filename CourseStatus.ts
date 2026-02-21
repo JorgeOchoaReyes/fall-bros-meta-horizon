@@ -3,6 +3,7 @@ import * as hz from 'horizon/core';
 class CourseStatus extends hz.Component<typeof CourseStatus> {
   static propsDefinition = {
     active: { type: hz.PropTypes.Boolean, default: false }, 
+    players: { type: hz.PropTypes.PlayerArray, default: [] }
   };
 
   start() {
@@ -11,7 +12,7 @@ class CourseStatus extends hz.Component<typeof CourseStatus> {
 }
 
 export {
-  CourseStatus,
+  CourseStatus
 }
 
 hz.Component.register(CourseStatus);
