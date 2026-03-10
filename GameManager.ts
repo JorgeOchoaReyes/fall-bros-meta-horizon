@@ -1,10 +1,5 @@
+import { CourseStatus } from 'CourseStatus';
 import * as hz from 'horizon/core'; 
-
-export type CourseStatusType = {
-  active: boolean;
-  players: hz.Player[];
-  courseName: string;
-}
 
 export type PlayerStatusType = 'queued' | 'playing' | 'dequeued';
 
@@ -13,14 +8,17 @@ class GameManager extends hz.Component<typeof GameManager> {
     platform1: { type: hz.PropTypes.Entity }, 
   };
 
+  platform_1: hz.Entity | undefined = undefined;
+
   start() {
+
+      this.platform_1 = this.props.platform1; 
+
      this.connectCodeBlockEvent(this.entity, hz.CodeBlockEvents.OnPlayerEnterWorld, (player: hz.Player) => {
-        console.log(`Player ${player.name.get()} entered the trigger.`);
         this.onPlayerEnter(player);
      });
 
      this.connectCodeBlockEvent(this.entity, hz.CodeBlockEvents.OnPlayerExitWorld, (player: hz.Player) => {
-        console.log(`Player ${player.name.get()} exited the trigger.`);
         this.onPlayerExit(player);
      });
 
@@ -41,6 +39,32 @@ class GameManager extends hz.Component<typeof GameManager> {
 
       const playerGroups = splitIntoGroupsOfFour(readyPlayers);
       console.log(`Player groups:`, playerGroups);
+
+        playerGroups.forEach((group, index) => {
+          if (availablePlatform && availablePlatform[index]) {
+            const platform = availablePlatform[index]; 
+           
+            if(platform) {
+              const courseStatusComp = platform.getComponents(CourseStatus)?.[0];
+              this.connectNetworkEvent(platform, courseStatusComp.varChangeEvent, (data: { active: boolean; players: hz.Player[]; courseNumber: number }) => {
+                 console.log(`Received course status change event from platform ${index + 1}:`, data);
+              });
+              courseStatusComp.updateCourseStatus(true, group);
+            }
+
+            // Update player status to 'playing'
+            group.forEach(player => {
+              const getExistingStatus = this.world.persistentStorageWorld.getWorldVariable('GameManager:player_status') as { [key: string]: string } || {};
+              const updatedStatus = { ...getExistingStatus, [player.id]: 'playing' };
+              this.world.persistentStorageWorld.setWorldVariableAcrossAllInstancesAsync('GameManager:player_status', updatedStatus);
+            });
+
+          } else {
+            console.log(`No available platform for group of ${group.length} players.`);
+          }
+        });
+      
+
     }, 5000);
 
   }
@@ -60,15 +84,23 @@ class GameManager extends hz.Component<typeof GameManager> {
     return readyPlayers;
   }
 
-  findAvailablePlatform(): CourseStatusType[] | null {
-    const platforms = ["course_1", "course_2", "course_3", "course_4"]
-      .map(courseName => this.world.persistentStorageWorld.getWorldVariable(`GameManager:${courseName}`))
-      .filter(entity => entity !== null) as unknown as CourseStatusType[];
+  findAvailablePlatform(): hz.Entity[] | null {
+    const platforms = [
+      this.platform_1
+    ] 
 
-    const availablePlatforms = [] as CourseStatusType[];
+     const availablePlatforms = [] as hz.Entity[]; 
      platforms.forEach((platform, index) => {
-      if (platform) { 
-        const isActive = platform?.active;
+      if (platform) {
+        const getComps = platform.getComponents(CourseStatus); 
+
+        if(getComps.length === 0) {
+          console.warn(`Platform ${index + 1} does not have a CourseStatus component.`);
+          return;
+        }
+
+        const targetComp = getComps[0];
+        const isActive = targetComp.props.active;
         if (!isActive) {
           console.log(`Platform ${index + 1} is available.`);
           availablePlatforms.push(platform);
@@ -83,15 +115,19 @@ class GameManager extends hz.Component<typeof GameManager> {
   private async onPlayerEnter(player: hz.Player) {
     const getExistingStatus = this.world.persistentStorageWorld.getWorldVariable('GameManager:player_status') as { [key: string]: string } || {};
     const updatedStatus = { ...getExistingStatus, [player.id]: 'dequeued' };
-    const resuls = await this.world.persistentStorageWorld.setWorldVariableAcrossAllInstancesAsync('GameManager:player_status', updatedStatus);
- 
+    await this.world.persistentStorageWorld.setWorldVariableAcrossAllInstancesAsync('GameManager:player_status', updatedStatus);
+    
   }
 
 
   private async onPlayerExit(player: hz.Player) {
     const getExistingStatus = this.world.persistentStorageWorld.getWorldVariable('GameManager:player_status') as { [key: string]: string } || {};
     const updatedStatus = { ...getExistingStatus, [player.id]: 'dequeued' };
-    const resuls = await this.world.persistentStorageWorld.setWorldVariableAcrossAllInstancesAsync('GameManager:player_status', updatedStatus);
+    await this.world.persistentStorageWorld.setWorldVariableAcrossAllInstancesAsync('GameManager:player_status', updatedStatus);
   }
+
+
+
+
 }
 hz.Component.register(GameManager);
