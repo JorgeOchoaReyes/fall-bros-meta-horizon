@@ -46,10 +46,24 @@ class GameManager extends hz.Component<typeof GameManager> {
            
             if(platform) {
               const courseStatusComp = platform.getComponents(CourseStatus)?.[0];
-              this.connectNetworkEvent(platform, courseStatusComp.varChangeEvent, (data: { active: boolean; players: hz.Player[]; courseNumber: number }) => {
+              this.connectNetworkEvent(platform, courseStatusComp.varChangeEvent, (data: { active: boolean; players: hz.Player[]; timestamps: number }) => {
                  console.log(`Received course status change event from platform ${index + 1}:`, data);
               });
-              courseStatusComp.updateCourseStatus(true, group);
+              const timestamp = Date.now(); 
+              courseStatusComp.updateCourseStatus(true, group, timestamp);
+
+              // Teleport players to the platform's spawn point
+              group.forEach((player, playerIndex) => {
+                const spawnPointProp = `spawnPoint${playerIndex + 1}` as keyof typeof courseStatusComp.props;
+                const spawnPointEntity = courseStatusComp.props[spawnPointProp] as unknown as hz.Entity;
+                if (spawnPointEntity) {
+                  const spawnPoint = spawnPointEntity.as(hz.SpawnPointGizmo);
+                  spawnPoint.teleportPlayer(player);
+                } else {
+                  console.warn(`Spawn point ${spawnPointProp} not found for platform ${index + 1}`);
+                }
+              });
+
             }
 
             // Update player status to 'playing'
@@ -124,10 +138,9 @@ class GameManager extends hz.Component<typeof GameManager> {
     const getExistingStatus = this.world.persistentStorageWorld.getWorldVariable('GameManager:player_status') as { [key: string]: string } || {};
     const updatedStatus = { ...getExistingStatus, [player.id]: 'dequeued' };
     await this.world.persistentStorageWorld.setWorldVariableAcrossAllInstancesAsync('GameManager:player_status', updatedStatus);
-  }
 
-
-
+    // if the player was playing we should find which platform they were on and remove them to ensure platform is free at some point 
+  } 
 
 }
 hz.Component.register(GameManager);

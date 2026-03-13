@@ -5,6 +5,10 @@ class CourseStatus extends hz.Component<typeof CourseStatus> {
     active: { type: hz.PropTypes.Boolean, default: false }, 
     players: { type: hz.PropTypes.PlayerArray, default: [] },
     courseNumber: { type: hz.PropTypes.Number, default: 0 },
+    spawnPoint1: { type: hz.PropTypes.Entity, default: null },
+    spawnPoint2: { type: hz.PropTypes.Entity, default: null },
+    spawnPoint3: { type: hz.PropTypes.Entity, default: null },
+    spawnPoint4: { type: hz.PropTypes.Entity, default: null },
   };
 
   courseStatusObj = {
@@ -16,27 +20,31 @@ class CourseStatus extends hz.Component<typeof CourseStatus> {
   varChangeEvent = new hz.NetworkEvent<{ active: boolean; players: hz.Player[]; timestamp: number | null }>("CourseStatusChange");
 
   preStart() { 
+    
   } 
 
   start() { 
     this.courseStatusObj.active = this.props.active;
     this.courseStatusObj.players = [...this.props.players];
 
-    this.async.setInterval(() => {
-      // log details of the course status every 10 seconds
+    this.async.setInterval(() => { 
       console.log(`Course ${this.props.courseNumber} status:`, 
         `Active: ${this.courseStatusObj.active}`, 
         `Players: ${this.courseStatusObj.players.length}`, 
         `Timestamp: ${this.courseStatusObj.timestamp}`
-      );
-
+      ); 
     } , 1000);
 
   }
 
-  updateCourseStatus(active: boolean, players: hz.Player[]) {
+  updateCourseStatus(active: boolean, players: hz.Player[], timestamp: number | null = null) {
     this.courseStatusObj.active = active;
     this.courseStatusObj.players = players;
+    this.courseStatusObj.timestamp = timestamp;
+    console.log(`Course ${this.props.courseNumber} status updated:`,
+      `Active: ${active}`,
+      `Players: ${players.length}`,
+    );
     this.sendNetworkBroadcastEvent(this.varChangeEvent, { active, players, timestamp: null });
   }
 
