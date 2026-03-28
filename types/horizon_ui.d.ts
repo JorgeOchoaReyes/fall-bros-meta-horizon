@@ -200,7 +200,7 @@ export declare class AnimatedBinding extends ValueBindingBase<number> {
      *
      * When the `value` parameter is a an explicit value or an updater function, the
      * value of the `AnimatedBinding` object is updated immediately without any
-     * animated transition. The updater function recieves the current value and
+     * animated transition. The updater function receives the current value and
      * mutates both the global value and each associated player value. If an
      * {@link Animation_2} object is passed to the `value` parameter, the `AnimatedBinding`
      * object will smoothly transition to the final value using the specified

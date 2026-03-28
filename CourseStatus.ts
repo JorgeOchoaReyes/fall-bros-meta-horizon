@@ -17,7 +17,7 @@ class CourseStatus extends hz.Component<typeof CourseStatus> {
     timestamp: null as number | null,
   }
 
-  varChangeEvent = new hz.NetworkEvent<{ active: boolean; players: hz.Player[]; timestamp: number | null }>("CourseStatusChange");
+  varChangeEvent = new hz.NetworkEvent<{ active: boolean; players: hz.Player[]; timestamp: number | null }>(`CourseStatusChange1`);
 
   preStart() { 
     
@@ -31,7 +31,8 @@ class CourseStatus extends hz.Component<typeof CourseStatus> {
       console.log(`Course ${this.props.courseNumber} status:`, 
         `Active: ${this.courseStatusObj.active}`, 
         `Players: ${this.courseStatusObj.players.length}`, 
-        `Timestamp: ${this.courseStatusObj.timestamp}`
+        `Timestamp: ${this.courseStatusObj.timestamp}`,
+        'Time Elapsed since game start:', Date.now() - (this.courseStatusObj.timestamp || Date.now())
       ); 
     } , 1000);
 
@@ -47,7 +48,6 @@ class CourseStatus extends hz.Component<typeof CourseStatus> {
     );
     this.sendNetworkBroadcastEvent(this.varChangeEvent, { active, players, timestamp: null });
   }
-
 }
 
 export {

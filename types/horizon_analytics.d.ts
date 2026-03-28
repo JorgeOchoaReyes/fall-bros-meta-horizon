@@ -662,7 +662,7 @@ export interface ITurboSettings {
     maxAFKSecondsBeforeRemove: number;
     /**
      * The maximum number of times to send friction events due to no player kills
-     * occuring within the {@link frictionNoKOsTimerSeconds} timer.
+     * occurring within the {@link frictionNoKOsTimerSeconds} timer.
      *
      * @remarks
      * The {@link useFrictionNoKOs} setting must be enabled in order to track this

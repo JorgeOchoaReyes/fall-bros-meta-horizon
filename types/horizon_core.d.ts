@@ -4229,7 +4229,7 @@ export declare class Player {
      * Initiates an attention-grabbing animation and displays a message above the on-screen button for a specified player input action.
      * This is useful for button tooltips in timed action prompts and tutorials.
      *
-     * @remarks Mobile only.
+     * @remarks Mobile only. All input action types are supported except for RightGrip, LeftGrip, RightTrigger, LeftTrigger.
      *
      * @param inputAction - action for which we should show the NUX animation and message
      * @param message - localizable message that should be shown above the action button
@@ -6276,7 +6276,7 @@ export declare abstract class Component<TComponent = ComponentWithConstructor<Re
      * @remarks
      * The event is only handled if {@link connectNetworkEvent} is called on the same entity on the owner client.
      *
-     * @param target - The player or entity that recieves the event.
+     * @param target - The player or entity that receives the event.
      * @param event - The network event.
      * @param data - The data to send with the event. the maximum amount data after serialization is 63kB.
      * @param players - The list of player devices to send the event to. If you don't specify this parameter, the

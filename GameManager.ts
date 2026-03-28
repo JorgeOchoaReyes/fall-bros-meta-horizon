@@ -3,6 +3,13 @@ import * as hz from 'horizon/core';
 
 export type PlayerStatusType = 'queued' | 'playing' | 'dequeued';
 
+const courseStatusArrayOfNetworkEvents: hz.NetworkEvent<{ active: boolean; players: hz.Player[]; timestamp: number | null }>[] = [
+  new hz.NetworkEvent<{ active: boolean; players: hz.Player[]; timestamp: number | null }>("CourseStatusChange1"),
+  new hz.NetworkEvent<{ active: boolean; players: hz.Player[]; timestamp: number | null }>("CourseStatusChange2"),
+  new hz.NetworkEvent<{ active: boolean; players: hz.Player[]; timestamp: number | null }>("CourseStatusChange3"),
+  new hz.NetworkEvent<{ active: boolean; players: hz.Player[]; timestamp: number | null }>("CourseStatusChange4"),
+];
+
 class GameManager extends hz.Component<typeof GameManager> {
   static propsDefinition = {
     platform1: { type: hz.PropTypes.Entity }, 
@@ -20,8 +27,12 @@ class GameManager extends hz.Component<typeof GameManager> {
 
      this.connectCodeBlockEvent(this.entity, hz.CodeBlockEvents.OnPlayerExitWorld, (player: hz.Player) => {
         this.onPlayerExit(player);
-     });
-
+     });``
+     
+    this.connectNetworkEvent(this.entity, courseStatusArrayOfNetworkEvents[0], (data: { active: boolean; players: hz.Player[]; timestamps: number }) => {
+       console.log(`Received course status change event from platform ${0 + 1}:`, data);
+    });
+ 
     // set an interval to check for ready players every 5 seconds
      this.async.setInterval(() => {
       const readyPlayers = this.findReadyPlayers();
@@ -37,46 +48,45 @@ class GameManager extends hz.Component<typeof GameManager> {
         return groups;
       };
 
-      const playerGroups = splitIntoGroupsOfFour(readyPlayers);
-      console.log(`Player groups:`, playerGroups);
+      const playerGroups = splitIntoGroupsOfFour(readyPlayers); 
 
-        playerGroups.forEach((group, index) => {
-          if (availablePlatform && availablePlatform[index]) {
-            const platform = availablePlatform[index]; 
-           
-            if(platform) {
-              const courseStatusComp = platform.getComponents(CourseStatus)?.[0];
-              this.connectNetworkEvent(platform, courseStatusComp.varChangeEvent, (data: { active: boolean; players: hz.Player[]; timestamps: number }) => {
-                 console.log(`Received course status change event from platform ${index + 1}:`, data);
-              });
-              const timestamp = Date.now(); 
-              courseStatusComp.updateCourseStatus(true, group, timestamp);
+      playerGroups.forEach((group, index) => {
+        if (availablePlatform && availablePlatform[index]) {
+          const platform = availablePlatform[index]; 
+         
+          if(platform) {
+            const courseStatusComp = platform.getComponents(CourseStatus)?.[0];
+            const timestamp = Date.now(); 
+            courseStatusComp.updateCourseStatus(true, group, timestamp);
 
-              // Teleport players to the platform's spawn point
-              group.forEach((player, playerIndex) => {
-                const spawnPointProp = `spawnPoint${playerIndex + 1}` as keyof typeof courseStatusComp.props;
-                const spawnPointEntity = courseStatusComp.props[spawnPointProp] as unknown as hz.Entity;
-                if (spawnPointEntity) {
-                  const spawnPoint = spawnPointEntity.as(hz.SpawnPointGizmo);
-                  spawnPoint.teleportPlayer(player);
-                } else {
-                  console.warn(`Spawn point ${spawnPointProp} not found for platform ${index + 1}`);
-                }
-              });
+            console.log("Group Size:", group.length);
 
-            }
-
-            // Update player status to 'playing'
-            group.forEach(player => {
-              const getExistingStatus = this.world.persistentStorageWorld.getWorldVariable('GameManager:player_status') as { [key: string]: string } || {};
-              const updatedStatus = { ...getExistingStatus, [player.id]: 'playing' };
-              this.world.persistentStorageWorld.setWorldVariableAcrossAllInstancesAsync('GameManager:player_status', updatedStatus);
+            // Teleport players to the platform's spawn point
+            group.forEach((player, playerIndex) => {
+              const spawnPointProp = `spawnPoint${playerIndex + 1}` as keyof typeof courseStatusComp.props;
+              const spawnPointEntity = courseStatusComp.props[spawnPointProp] as unknown as hz.Entity;
+              if (spawnPointEntity) {
+                const spawnPoint = spawnPointEntity.as(hz.SpawnPointGizmo);
+                spawnPoint.teleportPlayer(player);
+                console.log(`Teleporting player ${player.name.get()} to spawn point ${spawnPointEntity.position.get()} on platform ${index + 1}`);
+              } else {
+                console.log(`Spawn point ${spawnPointProp} not found for platform ${index + 1}`);
+              }
             });
 
-          } else {
-            console.log(`No available platform for group of ${group.length} players.`);
           }
-        });
+
+          // Update player status to 'playing'
+          group.forEach(player => {
+            const getExistingStatus = this.world.persistentStorageWorld.getWorldVariable('GameManager:player_status') as { [key: string]: string } || {};
+            const updatedStatus = { ...getExistingStatus, [player.id]: 'playing' };
+            this.world.persistentStorageWorld.setWorldVariableAcrossAllInstancesAsync('GameManager:player_status', updatedStatus);
+          });
+
+        } else {
+          console.log(`No available platform for group of ${group.length} players.`);
+        }
+      });
       
 
     }, 5000);
