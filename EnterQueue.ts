@@ -1,13 +1,10 @@
-import { Component, PropTypes, CodeBlockEvents, Player, Entity } from 'horizon/core';
+import { Component, PropTypes, CodeBlockEvents, Player, Entity, SpawnPointGizmo, AudioGizmo } from 'horizon/core';
 
 class EnterQueue extends Component<typeof EnterQueue> {
   static propsDefinition = {
     tpSfx: { type: PropTypes.Entity },
+    teleportTo: { type: PropTypes.Entity },
   };
-
-  override preStart() {
-
-  }
 
   override start() {
     this.connectCodeBlockEvent(
@@ -19,24 +16,25 @@ class EnterQueue extends Component<typeof EnterQueue> {
     );
   }
 
-  private async onPlayerEnterTrigger(player: Player) { 
-    let playerStatus = (this.world.persistentStorageWorld.getWorldVariable('GameManager:player_status') as {[key: string]: string}) || {};
+  private async onPlayerEnterTrigger(player: Player) {
+    let playerStatus = (this.world.persistentStorageWorld.getWorldVariable('GameManager:player_status') as { [key: string]: string }) || {};
 
-    if(!playerStatus || typeof playerStatus !== 'object') {
+    if (typeof playerStatus !== 'object' || playerStatus === null) {
       console.warn(`Player status data is missing or invalid. Initializing new player status object.`);
+      playerStatus = {};
     }
 
-    const playerId = player.id;
+    const playerIdStr = player.id.toString();
+    const currentPlayerStatus = playerStatus[playerIdStr];
 
-    const curPlayerStatus = playerStatus?.[playerId];
-
-    if (curPlayerStatus === 'queued' || curPlayerStatus === 'playing') {
-      console.log(`Player ${player.name.get()} already has a status: ${curPlayerStatus}.`);
+    if (currentPlayerStatus === 'queued' || currentPlayerStatus === 'playing') {
+      console.log(`Player ${player.name.get()} already has status: ${currentPlayerStatus}. No action taken.`);
       return;
     }
-    playerStatus[playerId] = 'queued'; 
-    const results = await this.world.persistentStorageWorld.setWorldVariableAcrossAllInstancesAsync('GameManager:player_status', playerStatus);
-    console.log(`Set player ${player.name.get()} status to 'queued' across all instances. Results:`, results); 
+
+    playerStatus[playerIdStr] = 'queued';
+    await this.world.persistentStorageWorld.setWorldVariableAcrossAllInstancesAsync('GameManager:player_status', playerStatus);
+    console.log(`Set player ${player.name.get()} status to 'queued'.`);
   }
 }
 

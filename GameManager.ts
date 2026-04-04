@@ -4,10 +4,7 @@ import * as hz from 'horizon/core';
 export type PlayerStatusType = 'queued' | 'playing' | 'dequeued';
 
 const courseStatusArrayOfNetworkEvents: hz.NetworkEvent<{ active: boolean; players: hz.Player[]; timestamp: number | null }>[] = [
-  new hz.NetworkEvent<{ active: boolean; players: hz.Player[]; timestamp: number | null }>("CourseStatusChange1"),
-  new hz.NetworkEvent<{ active: boolean; players: hz.Player[]; timestamp: number | null }>("CourseStatusChange2"),
-  new hz.NetworkEvent<{ active: boolean; players: hz.Player[]; timestamp: number | null }>("CourseStatusChange3"),
-  new hz.NetworkEvent<{ active: boolean; players: hz.Player[]; timestamp: number | null }>("CourseStatusChange4"),
+  new hz.NetworkEvent<{ active: boolean; players: hz.Player[]; timestamp: number | null }>("CourseStatusChange1"), 
 ];
 
 class GameManager extends hz.Component<typeof GameManager> {
@@ -19,15 +16,15 @@ class GameManager extends hz.Component<typeof GameManager> {
 
   start() {
 
-      this.platform_1 = this.props.platform1; 
+    this.platform_1 = this.props.platform1; 
 
-     this.connectCodeBlockEvent(this.entity, hz.CodeBlockEvents.OnPlayerEnterWorld, (player: hz.Player) => {
-        this.onPlayerEnter(player);
-     });
-
-     this.connectCodeBlockEvent(this.entity, hz.CodeBlockEvents.OnPlayerExitWorld, (player: hz.Player) => {
-        this.onPlayerExit(player);
-     });``
+    this.connectCodeBlockEvent(this.entity, hz.CodeBlockEvents.OnPlayerEnterWorld, (player: hz.Player) => {
+       this.onPlayerEnter(player);
+    });
+    
+    this.connectCodeBlockEvent(this.entity, hz.CodeBlockEvents.OnPlayerExitWorld, (player: hz.Player) => {
+       this.onPlayerExit(player);
+    });``
      
     this.connectNetworkEvent(this.entity, courseStatusArrayOfNetworkEvents[0], (data: { active: boolean; players: hz.Player[]; timestamps: number }) => {
        console.log(`Received course status change event from platform ${0 + 1}:`, data);
@@ -55,25 +52,7 @@ class GameManager extends hz.Component<typeof GameManager> {
           const platform = availablePlatform[index]; 
          
           if(platform) {
-            const courseStatusComp = platform.getComponents(CourseStatus)?.[0];
-            const timestamp = Date.now(); 
-            courseStatusComp.updateCourseStatus(true, group, timestamp);
-
-            console.log("Group Size:", group.length);
-
-            // Teleport players to the platform's spawn point
-            group.forEach((player, playerIndex) => {
-              const spawnPointProp = `spawnPoint${playerIndex + 1}` as keyof typeof courseStatusComp.props;
-              const spawnPointEntity = courseStatusComp.props[spawnPointProp] as unknown as hz.Entity;
-              if (spawnPointEntity) {
-                const spawnPoint = spawnPointEntity.as(hz.SpawnPointGizmo);
-                spawnPoint.teleportPlayer(player);
-                console.log(`Teleporting player ${player.name.get()} to spawn point ${spawnPointEntity.position.get()} on platform ${index + 1}`);
-              } else {
-                console.log(`Spawn point ${spawnPointProp} not found for platform ${index + 1}`);
-              }
-            });
-
+            this.teleportPlayersToPlatform(group, platform); 
           }
 
           // Update player status to 'playing'
@@ -87,10 +66,39 @@ class GameManager extends hz.Component<typeof GameManager> {
           console.log(`No available platform for group of ${group.length} players.`);
         }
       });
-      
 
     }, 5000);
 
+  }
+
+  teleportPlayersToPlatform(players: hz.Player[], platform: hz.Entity) {
+    const courseStatusComp = platform.getComponents(CourseStatus)?.[0];
+    if (!courseStatusComp) {
+      console.error("CourseStatus component not found on platform.");
+      return;
+    }
+
+    const timestamp = Date.now(); 
+    courseStatusComp.updateCourseStatus(true, players, timestamp);
+
+    players.forEach((player, playerIndex) => {
+      const spawnPointProp = `spawnPoint${playerIndex + 1}` as keyof typeof courseStatusComp.props;
+      const spawnPointEntity = courseStatusComp.props[spawnPointProp] as unknown as hz.Entity;
+      if (spawnPointEntity) {
+        try {
+          const spawnPoint = spawnPointEntity.as(hz.SpawnPointGizmo);
+          this.world.ui.showPopupForPlayer(player, `About to be teleported!`, 3);
+          this.async.setTimeout(() => {
+            spawnPoint.teleportPlayer(player);
+          }, 3000);
+          console.log(`Teleporting player ${player.name.get()} to spawn point ${JSON.stringify(spawnPointEntity.position.get())} on platform.`);
+        } catch (error) {
+          console.error(`Error teleporting player ${player.name.get()} to spawn point:`, error);
+        }
+      } else {
+        console.log(`Spawn point ${spawnPointProp} not found for platform.`);
+      }
+    });
   }
 
   findReadyPlayers(): hz.Player[] {
@@ -124,7 +132,7 @@ class GameManager extends hz.Component<typeof GameManager> {
         }
 
         const targetComp = getComps[0];
-        const isActive = targetComp.props.active;
+        const isActive = targetComp.courseStatusObj.active;  
         if (!isActive) {
           console.log(`Platform ${index + 1} is available.`);
           availablePlatforms.push(platform);
@@ -140,7 +148,6 @@ class GameManager extends hz.Component<typeof GameManager> {
     const getExistingStatus = this.world.persistentStorageWorld.getWorldVariable('GameManager:player_status') as { [key: string]: string } || {};
     const updatedStatus = { ...getExistingStatus, [player.id]: 'dequeued' };
     await this.world.persistentStorageWorld.setWorldVariableAcrossAllInstancesAsync('GameManager:player_status', updatedStatus);
-    
   }
 
 
@@ -148,8 +155,6 @@ class GameManager extends hz.Component<typeof GameManager> {
     const getExistingStatus = this.world.persistentStorageWorld.getWorldVariable('GameManager:player_status') as { [key: string]: string } || {};
     const updatedStatus = { ...getExistingStatus, [player.id]: 'dequeued' };
     await this.world.persistentStorageWorld.setWorldVariableAcrossAllInstancesAsync('GameManager:player_status', updatedStatus);
-
-    // if the player was playing we should find which platform they were on and remove them to ensure platform is free at some point 
   } 
 
 }
