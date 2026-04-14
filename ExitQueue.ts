@@ -1,4 +1,4 @@
-import { Component, PropTypes, CodeBlockEvents, Player, Entity } from 'horizon/core';
+import { Component, PropTypes, CodeBlockEvents, Player, AudioGizmo } from 'horizon/core';
 
 class ExitQueue extends Component<typeof ExitQueue> {
   static propsDefinition = {
@@ -24,6 +24,14 @@ class ExitQueue extends Component<typeof ExitQueue> {
       console.warn(`Player status data is missing or invalid. Initializing new player status object.`);
     }
 
+    const sound = this.props.tpSfx?.as(AudioGizmo);
+      if (sound) {
+        sound.play({
+          fade: 0,
+          players: [player],
+        });
+    }  
+
     const playerId = player.id;
 
     const curPlayerStatus = playerStatus?.[playerId];
@@ -35,6 +43,7 @@ class ExitQueue extends Component<typeof ExitQueue> {
     playerStatus[playerId] = 'dequeued'; 
     const results = await this.world.persistentStorageWorld.setWorldVariableAcrossAllInstancesAsync('GameManager:player_status', playerStatus);
     console.log(`Set player ${player.name.get()} status to 'queued' across all instances. Results:`, results); 
+    this.world.ui.showPopupForPlayer(player, "You have left the queue.", 3);
   }
 }
 

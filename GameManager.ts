@@ -1,11 +1,13 @@
 import { CourseStatus } from 'CourseStatus';
 import * as hz from 'horizon/core'; 
+import { AudioGizmo } from 'horizon/core';
 
 export type PlayerStatusType = 'queued' | 'playing' | 'dequeued';
 
 class GameManager extends hz.Component<typeof GameManager> {
   static propsDefinition = {
     platform1: { type: hz.PropTypes.Entity }, 
+    tpSfx: { type: hz.PropTypes.Entity },
   };
 
   platform_1: hz.Entity | undefined = undefined;
@@ -22,12 +24,24 @@ class GameManager extends hz.Component<typeof GameManager> {
        this.onPlayerExit(player);
     });``
  
-    // set an interval to check for ready players every 5 seconds
+    // set an interval to check for ready players every 10 seconds
      this.async.setInterval(() => {
       const readyPlayers = this.findReadyPlayers();
       const availablePlatform = this.findAvailablePlatform();
       console.log(`Ready players: ${readyPlayers.length}`);
       console.log(`Free platform: ${availablePlatform ? availablePlatform.length : 0}`);
+
+      // algorithm to randomly choose players who are ready and priotize those who have been waiting the longest based on the last time played timestamp 
+      const findMostRecentNotPlayedPlayers = (arr: hz.Player[]) => {
+        const currentTime = Date.now();
+        return arr.sort((a, b) => {
+          const aLastPlayed = this.world.persistentStorageWorld.getWorldVariable(`${a.id}_lastGamePlayedTimeStamp`) as number || 0;
+          const bLastPlayed = this.world.persistentStorageWorld.getWorldVariable(`${b.id}_lastGamePlayedTimeStamp`) as number || 0;
+          const aWaitTime = currentTime - aLastPlayed;
+          const bWaitTime = currentTime - bLastPlayed;
+          return bWaitTime - aWaitTime; 
+        });
+      };
 
       const splitIntoGroupsOfFour = (arr: hz.Player[]) => {
         const groups: hz.Player[][] = [];
@@ -37,7 +51,9 @@ class GameManager extends hz.Component<typeof GameManager> {
         return groups;
       };
 
-      const playerGroups = splitIntoGroupsOfFour(readyPlayers); 
+      const sortedPlayers = findMostRecentNotPlayedPlayers(readyPlayers);
+
+      const playerGroups = splitIntoGroupsOfFour(sortedPlayers); 
 
       playerGroups.forEach((group, index) => {
         if (availablePlatform && availablePlatform[index]) {
@@ -47,10 +63,10 @@ class GameManager extends hz.Component<typeof GameManager> {
             this.teleportPlayersToPlatform(group, platform); 
           }
 
-          // Update player status to 'playing'
+          // Update player status to 'playing' and update their lastGamePlayedTimeStamp to know to deprioritize them in the queue if they leave and want to rejoin
           group.forEach(player => {
             const getExistingStatus = this.world.persistentStorageWorld.getWorldVariable('GameManager:player_status') as { [key: string]: string } || {};
-            const updatedStatus = { ...getExistingStatus, [player.id]: 'playing' };
+            const updatedStatus = { ...getExistingStatus, [player.id]: 'playing', [`${player.id}_lastGamePlayedTimeStamp`]: Date.now() };
             this.world.persistentStorageWorld.setWorldVariableAcrossAllInstancesAsync('GameManager:player_status', updatedStatus);
           });
 
@@ -59,7 +75,7 @@ class GameManager extends hz.Component<typeof GameManager> {
         }
       });
 
-    }, 5000);
+    }, 10000); // Check every 10 seconds
 
   }
 
@@ -81,9 +97,16 @@ class GameManager extends hz.Component<typeof GameManager> {
           const spawnPoint = spawnPointEntity.as(hz.SpawnPointGizmo);
           this.world.ui.showPopupForPlayer(player, `About to be teleported!`, 3);
           this.async.setTimeout(() => {
+            const sound = this.props.tpSfx?.as(AudioGizmo);
+            if (sound) {
+              sound.play({
+                fade: 0,
+                players: [player],
+              });
+            }  
             spawnPoint.teleportPlayer(player);
-          }, 3000);
-          console.log(`Teleporting player ${player.name.get()} to spawn point ${JSON.stringify(spawnPointEntity.position.get())} on platform.`);
+          }, 3000); 
+
         } catch (error) {
           console.error(`Error teleporting player ${player.name.get()} to spawn point:`, error);
         }
