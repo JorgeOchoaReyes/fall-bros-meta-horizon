@@ -47,7 +47,9 @@ class FallingPlatform extends Component<typeof FallingPlatform> {
       if (t >= 1.0) {
         fallUpdate.disconnect();
         this.scheduleDisappear(platform);
+        this.scheduleReset(platform);
       }
+      
     });
  
 
@@ -59,6 +61,18 @@ class FallingPlatform extends Component<typeof FallingPlatform> {
       platform.collidable.set(false);
     }, this.disappearDelay * 1000);
   }
+
+  private scheduleReset(platform: Entity) {
+    this.async.setTimeout(() => {
+      if (this.originalPosition) {
+        platform.position.set(this.originalPosition);
+      }
+      platform.visible.set(true);
+      platform.collidable.set(true);
+      this.isFalling = false;
+    }, (this.disappearDelay + 20) * 1000); // Reset after disappear delay + 5 seconds
+  }
+
 }
 
 Component.register(FallingPlatform);

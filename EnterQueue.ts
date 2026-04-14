@@ -1,4 +1,4 @@
-import { Component, PropTypes, CodeBlockEvents, Player, Entity, SpawnPointGizmo, AudioGizmo } from 'horizon/core';
+import { Component, PropTypes, CodeBlockEvents, Player, AudioGizmo } from 'horizon/core';
 
 class EnterQueue extends Component<typeof EnterQueue> {
   static propsDefinition = {
@@ -24,6 +24,14 @@ class EnterQueue extends Component<typeof EnterQueue> {
       playerStatus = {};
     }
 
+    const sound = this.props.tpSfx?.as(AudioGizmo);
+      if (sound) {
+        sound.play({
+          fade: 0,
+          players: [player],
+        });
+    }  
+
     const playerIdStr = player.id.toString();
     const currentPlayerStatus = playerStatus[playerIdStr];
 
@@ -35,6 +43,7 @@ class EnterQueue extends Component<typeof EnterQueue> {
     playerStatus[playerIdStr] = 'queued';
     await this.world.persistentStorageWorld.setWorldVariableAcrossAllInstancesAsync('GameManager:player_status', playerStatus);
     console.log(`Set player ${player.name.get()} status to 'queued'.`);
+    this.world.ui.showPopupForPlayer(player, "You have entered the queue!", 3);
   }
 }
 

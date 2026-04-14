@@ -15,9 +15,7 @@ class CourseStatus extends hz.Component<typeof CourseStatus> {
     timestamp: null as number | null,
     test: "hello"
   }
-
-  varChangeEvent = new hz.NetworkEvent<{ active: boolean; players: hz.Player[]; timestamp: number | null }>(`CourseStatusChange1`);
-
+ 
   preStart() { 
     
   } 
@@ -35,14 +33,9 @@ class CourseStatus extends hz.Component<typeof CourseStatus> {
         'Time Elapsed since game start:', Date.now() - (this.courseStatusObj.timestamp || Date.now())
       ); 
 
-      if (this.courseStatusObj.active && this.courseStatusObj.players.length <= 0) {
+      if (this.courseStatusObj.active && this.courseStatusObj.players.length <= 0 || (this.courseStatusObj.timestamp && (Date.now() - this.courseStatusObj.timestamp > 300000))) {
         this.courseStatusObj.active = false;
-        this.courseStatusObj.timestamp = null;
-        this.sendNetworkBroadcastEvent(this.varChangeEvent, { 
-          active: this.courseStatusObj.active, 
-          players: this.courseStatusObj.players, 
-          timestamp: this.courseStatusObj.timestamp 
-        });
+        this.courseStatusObj.timestamp = null; 
         console.log(`Course ${this.props.courseNumber} has no players. Setting active to false and broadcasting change.`);
       }
 
@@ -57,8 +50,7 @@ class CourseStatus extends hz.Component<typeof CourseStatus> {
     console.log(`Course ${this.props.courseNumber} status updated:`,
       `Active: ${active}`,
       `Players: ${players.length}`,
-    );
-    this.sendNetworkBroadcastEvent(this.varChangeEvent, { active, players, timestamp: null });
+    ); 
   }
 }
 
