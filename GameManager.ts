@@ -3,10 +3,6 @@ import * as hz from 'horizon/core';
 
 export type PlayerStatusType = 'queued' | 'playing' | 'dequeued';
 
-const courseStatusArrayOfNetworkEvents: hz.NetworkEvent<{ active: boolean; players: hz.Player[]; timestamp: number | null }>[] = [
-  new hz.NetworkEvent<{ active: boolean; players: hz.Player[]; timestamp: number | null }>("CourseStatusChange1"), 
-];
-
 class GameManager extends hz.Component<typeof GameManager> {
   static propsDefinition = {
     platform1: { type: hz.PropTypes.Entity }, 
@@ -25,17 +21,13 @@ class GameManager extends hz.Component<typeof GameManager> {
     this.connectCodeBlockEvent(this.entity, hz.CodeBlockEvents.OnPlayerExitWorld, (player: hz.Player) => {
        this.onPlayerExit(player);
     });``
-     
-    this.connectNetworkEvent(this.entity, courseStatusArrayOfNetworkEvents[0], (data: { active: boolean; players: hz.Player[]; timestamps: number }) => {
-       console.log(`Received course status change event from platform ${0 + 1}:`, data);
-    });
  
     // set an interval to check for ready players every 5 seconds
      this.async.setInterval(() => {
       const readyPlayers = this.findReadyPlayers();
       const availablePlatform = this.findAvailablePlatform();
-      console.log(`Checking for ready players. Total ready players: ${readyPlayers.length}`);
-      console.log(`Available platform: ${availablePlatform ? availablePlatform.length : 0}`);
+      console.log(`Ready players: ${readyPlayers.length}`);
+      console.log(`Free platform: ${availablePlatform ? availablePlatform.length : 0}`);
 
       const splitIntoGroupsOfFour = (arr: hz.Player[]) => {
         const groups: hz.Player[][] = [];

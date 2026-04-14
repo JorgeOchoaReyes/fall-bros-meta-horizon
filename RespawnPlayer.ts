@@ -1,9 +1,11 @@
 import * as hz from 'horizon/core';
+import { CourseStatus } from 'CourseStatus';
 
 class RespawnPlayer extends hz.Component<typeof RespawnPlayer> {
   static propsDefinition = {
     spawnPoint: { type: hz.PropTypes.Entity },
     tpSfx: { type: hz.PropTypes.Entity },
+    platform1: { type: hz.PropTypes.Entity },
   };
 
   start() {
@@ -21,7 +23,17 @@ class RespawnPlayer extends hz.Component<typeof RespawnPlayer> {
               players: [player],
             });
           } 
+
           this.props.spawnPoint?.as(hz.SpawnPointGizmo).teleportPlayer(player);
+
+          const courseStatusComponent = this.props.platform1?.getComponents(CourseStatus);
+          if (courseStatusComponent) {
+            const currentStatus = courseStatusComponent[0].courseStatusObj;
+            const removeDeadPlayer = currentStatus.players.filter(p => p.id !== player.id);
+            const statusOfCourse = removeDeadPlayer.length > 0 ? true : false;
+            courseStatusComponent[0].updateCourseStatus(statusOfCourse, removeDeadPlayer, Date.now());
+          } 
+
         }
     }
 
